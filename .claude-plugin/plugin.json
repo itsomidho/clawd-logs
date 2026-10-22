@@ -1,0 +1,32 @@
+{
+  "name": "clawd-logs",
+  "version": "0.1.0",
+  "description": "Watches your project's error logs (WordPress debug.log, nginx, any log file): new errors show above the prompt, grouped, with a Fix button, and Claude hears about the ones its own work caused",
+  "author": { "name": "Omid Hosseini", "url": "https://github.com/itsomidho" },
+  "homepage": "https://github.com/itsomidho/clawd-logs",
+  "repository": "https://github.com/itsomidho/clawd-logs",
+  "license": "MIT",
+  "keywords": ["logs", "errors", "debug.log", "php", "wordpress", "nginx"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "minLevel": {
+      "type": "string",
+      "title": "Show from level",
+      "description": "The least severe errors that show: fatal, error, warning (the default; hides notices and deprecations) or notice (everything).",
+      "options": ["fatal", "error", "warning", "notice"],
+      "default": "warning"
+    },
+    "tellClaude": {
+      "type": "boolean",
+      "title": "Tell Claude",
+      "description": "When an error appears while Claude is working, add it to what Claude reads after its next tool call, so it notices what its change broke.",
+      "default": true
+    },
+    "refreshSeconds": {
+      "type": "number",
+      "title": "Check every (seconds)",
+      "description": "How often the logs are checked while Claude is idle. They are also checked after each of Claude's tool calls.",
+      "default": 2
+    }
+  }
+}
