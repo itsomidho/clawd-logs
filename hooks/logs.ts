@@ -210,6 +210,31 @@ export function oneLine(g: Group, root: string): string {
   return `${message}${where}`
 }
 
+// A path cut to `max` characters from the middle, so its start and its file
+// name (with its folder, when there is room) both stay.
+export function shortenPath(path: string, max: number): string {
+  if (path.length <= max) return path
+  if (max < 2) return '…'
+  const name = path.slice(path.lastIndexOf('/'))
+  const cut = path.lastIndexOf('/', path.length - name.length - 1)
+  const parent = cut < 0 ? name : path.slice(cut)
+  const keep = parent.length <= max - 7 ? parent : name
+  const tail = Math.min(max - 1, Math.max(keep.length, Math.floor((max - 1) / 2)))
+  return path.slice(0, max - 1 - tail) + '…' + path.slice(path.length - tail)
+}
+
+// oneLine fitted to `room` characters for the band: the message is cut
+// first, so where the error points (file:line) stays readable.
+export function bandLine(g: Group, root: string, room: number): string {
+  const line = oneLine(g, root)
+  if (line.length <= room) return line
+  if (g.file === undefined) return line.slice(0, Math.max(0, room - 1)) + '…'
+  const where = shortenPath(`${relative(root, g.file)}:${g.line ?? ''}`, Math.max(12, Math.floor(room / 2)))
+  const message = line.slice(0, line.lastIndexOf(' · '))
+  const space = room - where.length - 3
+  return `${message.length > space ? message.slice(0, Math.max(0, space - 1)) + '…' : message} · ${where}`
+}
+
 // What Claude reads after a tool call: the new errors, most severe first, the
 // stack of the first one, and what to do.
 export function tellText(news: readonly { group: Group; times: number }[], root: string, max = 5): string {

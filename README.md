@@ -21,8 +21,12 @@ Or try it from a checkout: `claude --plugin-dir path/to/clawd-logs`.
 ## The band
 
 ```
-⚠ 2 new errors · Fatal Uncaught Error: Call to undefined function foo() · src/Foo.php:42 ×3  Fix  Dismiss
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ⚠ 2 new errors · Fatal Uncaught Error: Call to undefined function foo() · src/Foo.php:42 ×3  Fix  Dismiss │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
+
+It is framed like [clawd-statusbar](https://github.com/itsomidho/clawd-statusbar)'s section. On a narrow screen the message is cut first, so the file and line stay readable.
 
 **Fix** sends the error and its stack trace to Claude. **Dismiss** hides the band until the next new error. It sits with [clawd-guard](https://github.com/itsomidho/clawd-guard)'s band and [clawd-git](https://github.com/itsomidho/clawd-git)'s panel when you have them.
 

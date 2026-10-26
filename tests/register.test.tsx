@@ -102,6 +102,10 @@ test('the band shows new errors; Fix sends one to Claude; Dismiss hides it', asy
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 160 } as never })
   expect(await ui.find({ type: 'Text', text: /Call to undefined function foo\(\)/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: ' ×2' })).toBeDefined()
+  // Framed like clawd-statusbar: a round, dim border.
+  const drawn = JSON.stringify(await ui.drawn())
+  expect(drawn).toContain('"borderStyle":"round"')
+  expect(drawn).toContain('"borderDimColor":true')
   await ui.press({ key: 'fix' })
   expect(w.sent.length).toBe(1)
   expect(w.sent[0]?.includes('```\nPHP Fatal error')).toBe(true)

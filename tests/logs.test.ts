@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { addEntries, findSources, fixText, headline, normalize, oneLine, parseEntries, relative, tellText, utf8Length, visible, wholeLines } from '../hooks/logs'
+import { addEntries, bandLine, findSources, fixText, headline, normalize, oneLine, parseEntries, relative, shortenPath, tellText, utf8Length, visible, wholeLines } from '../hooks/logs'
 
 const S = '[22-Oct-2026 14:30:00 UTC] '
 
@@ -113,4 +113,19 @@ test('sources: WordPress in the project or above it, wpdev nginx logs, extra pat
     '/home/u/y.log',
   ])
   expect(await findSources('/elsewhere', undefined, [], isDir)).toEqual([])
+})
+
+test('the band line keeps file:line and cuts the message first', () => {
+  const root = '/home/u/sites/app'
+  const { groups } = addEntries([], 'log', parseEntries(`${S}PHP Fatal error:  Uncaught Error: Call to undefined function some_long_function_name() in /home/u/sites/app/web/app/themes/sage/app/View/Composers/Header.php:42`), 1)
+  const g = groups[0]!
+  expect(bandLine(g, root, 300)).toBe(oneLine(g, root))
+  const line = bandLine(g, root, 80)
+  expect(line.length <= 80).toBe(true)
+  expect(line.startsWith('Uncaught Error: Call to')).toBe(true)
+  expect(line.endsWith(' · web/app/themes/…/Composers/Header.php:42')).toBe(true)
+  const tight = bandLine(g, root, 50)
+  expect(tight.length <= 50).toBe(true)
+  expect(tight.endsWith('…/Header.php:42')).toBe(true)
+  expect(shortenPath('/a/b', 10)).toBe('/a/b')
 })

@@ -8,6 +8,7 @@ import type { EngineInterface as Engine, Register } from 'claude-code'
 import {
   LEVEL_LABEL,
   addEntries,
+  bandLine,
   findSources,
   fixText,
   headline,
@@ -302,12 +303,12 @@ export const register: Register = (on, options) => {
     const below = await next(e)
     const { Box, Button, Text } = $.ui.resolve(e)
     const total = fresh.length
-    const room = Math.max(20, e.props.bodyColumns - 40)
-    const line = oneLine(top, ctx.root)
-    const summary = line.length > room ? line.slice(0, room - 1) + '…' : line
+    // 40 for the counts and buttons, 4 for the frame's border and padding.
+    const room = Math.max(20, e.props.bodyColumns - 44)
+    const summary = bandLine(top, ctx.root, room)
     const color = top.level === 'warning' || top.level === 'notice' ? 'yellow' : 'red'
     const band = (
-      <Box>
+      <Box borderStyle="round" borderDimColor paddingX={1} flexDirection="row">
         <Text color={color}>⚠ </Text>
         <Text bold>{total}</Text>
         <Text dimColor>{total === 1 ? ' new error · ' : ' new errors · '}</Text>
