@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { addEntries, bandLine, findSources, fixText, headline, normalize, oneLine, parseEntries, relative, shortenPath, tellText, utf8Length, visible, wholeLines } from '../hooks/logs'
+import { addEntries, bandLine, findSources, fixText, headline, isDebuggable, localPath, normalize, oneLine, parseEntries, relative, shortenPath, tellText, utf8Length, visible, wholeLines } from '../hooks/logs'
 
 const S = '[22-Oct-2026 14:30:00 UTC] '
 
@@ -78,6 +78,10 @@ test('text: one line per error, paths from the project, a container path matched
   expect(oneLine(g, '/home/u/sites/app')).toBe('Uncaught Error: Call to undefined function foo() · src/Foo.php:42')
   expect(relative('/home/u/sites/app', '/home/u/sites/app/x.php')).toBe('x.php')
   expect(relative('/home/u/sites/app', '/etc/x')).toBe('/etc/x')
+  // A container's path is put under the project; another stays as it was.
+  expect(localPath('/home/u/sites/app', '/var/www/app/src/Foo.php')).toBe('/home/u/sites/app/src/Foo.php')
+  expect(localPath('/home/u/sites/app', '/etc/x')).toBe('/etc/x')
+  expect([isDebuggable('a/Foo.php'), isDebuggable('b.py'), isDebuggable('c.mjs'), isDebuggable('d.css'), isDebuggable('debug.log')]).toEqual([true, true, true, false, false])
   const told = tellText([{ group: g, times: 2 }], '/home/u/sites/app')
   expect(told.includes('[Fatal]')).toBe(true)
   expect(told.includes('(×2)')).toBe(true)

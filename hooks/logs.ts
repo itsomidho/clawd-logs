@@ -200,6 +200,18 @@ export function relative(root: string, path: string): string {
   return at >= 0 ? path.slice(at + name.length + 2) : path
 }
 
+// Where a path is on this machine: one from inside a container is put under
+// the project folder; one that is not the project's stays as it was.
+export function localPath(root: string, path: string): string {
+  const rel = relative(root, path)
+  return rel === path ? path : `${root}/${rel}`
+}
+
+// A file clawd-debug can run: PHP, Python, JavaScript.
+export function isDebuggable(path: string): boolean {
+  return /\.(php|phtml|py|pyw|js|mjs|cjs)$/i.test(path)
+}
+
 // The message without its PHP prefix, and where it points, for one line.
 export function oneLine(g: Group, root: string): string {
   const message = g.message

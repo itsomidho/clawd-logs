@@ -16,6 +16,8 @@ import {
   parseConfigFile,
   parseEntries,
   parseLevel,
+  isDebuggable,
+  localPath,
   relative,
   tellText,
   visible,
@@ -302,17 +304,22 @@ export const register: Register = (on, options) => {
 
     const below = await next(e)
     const { Box, Button, Text } = $.ui.resolve(e)
+    // With clawd-debug loaded, an error that points at a file and line it can
+    // run gets a Debug button: a breakpoint there, the file in its pane.
+    const debugAt = top.file && top.line && isDebuggable(top.file) && (await hasDebugger($))
+      ? `${localPath(ctx.root, top.file)}:${top.line}`
+      : ''
     const total = fresh.length
     // 40 for the counts and buttons, 4 for the frame's border and padding.
-    const room = Math.max(20, e.props.bodyColumns - 44)
+    const room = Math.max(20, e.props.bodyColumns - 44 - (debugAt ? 8 : 0))
     const summary = bandLine(top, ctx.root, room)
-    const color = top.level === 'warning' || top.level === 'notice' ? 'yellow' : 'red'
+    const color = top.level === 'warning' || top.level === 'notice' ? WARN : ERR
     const band = (
-      <Box borderStyle="round" borderDimColor paddingX={1} flexDirection="row">
-        <Text color={color}>⚠ </Text>
+      <Box borderStyle="round" borderColor={BORDER} paddingX={1} flexDirection="row">
+        <Text bold color={CHIP_TEXT} backgroundColor={color}>{` ${LEVEL_LABEL[top.level].toUpperCase()} `}</Text>
+        <Text> </Text>
         <Text bold>{total}</Text>
-        <Text dimColor>{total === 1 ? ' new error · ' : ' new errors · '}</Text>
-        <Text color={color}>{LEVEL_LABEL[top.level]} </Text>
+        <Text dimColor>{total === 1 ? ' new · ' : ' new · '}</Text>
         <Text>{summary}</Text>
         {top.count > 1 ? <Text dimColor>{` ×${top.count}`}</Text> : null}
         <Text> </Text>
@@ -321,6 +328,10 @@ export const register: Register = (on, options) => {
           await update($, dismissedAt, () => top.lastAt)
         }} />
         <Text> </Text>
+        {debugAt ? <Button key="debug" label="Debug" onPress={async () => {
+          await $.command.run({ command: 'dbg', args: `break ${debugAt}` }).catch(() => {})
+        }} /> : null}
+        {debugAt ? <Text> </Text> : null}
         <Button key="dismiss" label="Dismiss" onPress={async () => {
           const latest = (await read($, groups)).reduce((t, g) => Math.max(t, g.lastAt), 0)
           await update($, dismissedAt, () => latest)
@@ -330,3 +341,17 @@ export const register: Register = (on, options) => {
     return below ? <Box flexDirection="column">{band}{below as never}</Box> : band
   })
 }
+
+// clawd-debug (a separate plugin) registers /dbg; the Debug button shows only then.
+async function hasDebugger($: Engine): Promise<boolean> {
+  const commands = await $.command.list().catch(() => [])
+  return commands.some(one => one.name === 'dbg')
+}
+
+// The clawd family's look (shared with clawd-git and clawd-debug): the accent,
+// the frame colour, and chips (dark text on a colour).
+const BORDER = '#5c6370'
+const CHIP_TEXT = '#1e2127'
+const WARN = '#e5c07b'
+const ERR = '#e06c75'
+

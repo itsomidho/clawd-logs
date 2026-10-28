@@ -102,10 +102,10 @@ test('the band shows new errors; Fix sends one to Claude; Dismiss hides it', asy
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 160 } as never })
   expect(await ui.find({ type: 'Text', text: /Call to undefined function foo\(\)/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: ' ×2' })).toBeDefined()
-  // Framed like clawd-statusbar: a round, dim border.
+  // Framed like the clawd family: a round border in its frame colour.
   const drawn = JSON.stringify(await ui.drawn())
   expect(drawn).toContain('"borderStyle":"round"')
-  expect(drawn).toContain('"borderDimColor":true')
+  expect(drawn).toContain('"borderColor":"#5c6370"')
   await ui.press({ key: 'fix' })
   expect(w.sent.length).toBe(1)
   expect(w.sent[0]?.includes('```\nPHP Fatal error')).toBe(true)
@@ -144,4 +144,33 @@ test('/logs lists, fixes by number, clears and pauses', async ($, on) => {
   await $.turn.start({ turnId: 't2', text: 'go' } as never)
   w.append(FATAL)
   expect(((await $.tool.call(BASH)) as { context?: readonly string[] }).context).toBeUndefined()
+})
+
+test('with clawd-debug loaded, Debug sets a breakpoint where the error points', async ($, on) => {
+  const w = world(on)
+  const commands: { command: string; args?: string }[] = []
+  on('command.list', () => ({ value: [{ name: 'dbg', description: 'Step debugger', source: 'plugin' }] }) as never)
+  on('command.run', ($, e) => { commands.push({ command: e.command, args: e.args }); return { text: 'ok' } as never })
+  await begin($, w.clock)
+  w.append(FATAL)
+  await w.clock.advance(3000)
+  const ui = await $.ui.mount({ plugin: 'clawd-logs', surface: 'terminal', component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 160 } as never })
+  await ui.press({ key: 'debug' })
+  // The container's /var/www/app/… is the project's own file.
+  expect(commands).toEqual([{ command: 'dbg', args: `break ${ROOT}/src/Foo.php:42` }])
+  await ui.unmount()
+})
+
+test('without clawd-debug, the band has no Debug button', async ($, on) => {
+  const w = world(on)
+  on('command.list', () => ({ value: [] }) as never)
+  await begin($, w.clock)
+  w.append(FATAL)
+  await w.clock.advance(3000)
+  const ui = await $.ui.mount({ plugin: 'clawd-logs', surface: 'terminal', component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 160 } as never })
+  expect(await ui.find({ key: 'fix' })).toBeDefined()
+  expect(await ui.find({ key: 'debug' })).toBeUndefined()
+  await ui.unmount()
 })
