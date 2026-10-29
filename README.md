@@ -1,6 +1,12 @@
 # clawd-logs
 
+[![Latest release](https://img.shields.io/github/v/release/itsomidho/clawd-logs?label=release&color=7fbeb3)](https://github.com/itsomidho/clawd-logs/releases) [![Wiki](https://img.shields.io/badge/docs-wiki-7fbeb3)](https://github.com/itsomidho/clawd-logs/wiki)
+
 Watches your project's error logs while you work with [Claude Code](https://claude.com/claude-code). New errors show above the prompt, grouped, with a **Fix** button. When an error appears while Claude is working, Claude reads it right after its next tool call, so it notices what its change broke, even when the page or command only said "There has been a critical error on this website".
+
+![clawd-logs in a real session: a PHP fatal error lands in debug.log three times, the band above the prompt shows it once with ×3, and Fix hands it to Claude](docs/logs.gif)
+
+<sub>Recorded: the same fatal error is logged three times and shows as one row, ×3, with the file and line; **Fix** sends it, stack trace included, to Claude, which goes to find the missing function.</sub>
 
 - **Finds the logs itself:** `wp-content/debug.log` (or Bedrock's `web/app/debug.log`) in the project or a folder above it, Laravel's `storage/logs/laravel.log`, and a [wpdev](#wpdev)-style stack's nginx error log for the site. Add any other file in a config file.
 - **Only what's new:** each log is read from where it ended when the session started. A rotated or emptied log is read again from its start.
@@ -72,6 +78,17 @@ With a stack laid out as `<stack>/sites/<site>` and nginx logs in `<stack>/logs/
 - Logs are read with `tail -c`, at most 512 KB per check. After a burst larger than that, only the newest part is read.
 - A log that does not exist yet is picked up once it does, as long as its folder exists (`wp-content/`).
 - Nothing leaves your machine: no network, no tools to install.
+
+## The clawd family
+
+clawd-logs is one of seven plugins in the [`itsomidho` marketplace](https://github.com/itsomidho/claude-plugins); each works on its own:
+
+- [clawd-statusbar](https://github.com/itsomidho/clawd-statusbar): a framed status bar under the prompt: context, usage limits with reset times, git state, MR/PR pipeline status, and Clawd frying an egg while Claude works
+- [clawd-tasks](https://github.com/itsomidho/clawd-tasks): a live task board: Claude's plan, and under each task the steps it took, how long it ran, the files it changed and the agents it started
+- [clawd-guard](https://github.com/itsomidho/clawd-guard): a safety net: stops risky shell commands, writes to secret files and leaked keys before they run
+- [clawd-notify](https://github.com/itsomidho/clawd-notify): tells you when Claude is done or needs you: a desktop notification, a chime, and optionally a push to your phone
+- [clawd-git](https://github.com/itsomidho/clawd-git): a live git panel beside the conversation: the file tree, changes, colored diffs and the commit graph; marks what Claude changed, stages, commits and asks Claude to review
+- [clawd-debug](https://github.com/itsomidho/clawd-debug): a step debugger beside the conversation: set a breakpoint, let Claude run your code with test data, and step line by line while every variable and line value shows
 
 ## License
 
