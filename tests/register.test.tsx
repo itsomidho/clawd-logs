@@ -174,3 +174,23 @@ test('without clawd-debug, the band has no Debug button', async ($, on) => {
   expect(await ui.find({ key: 'debug' })).toBeUndefined()
   await ui.unmount()
 })
+
+test('a narrow band fits its row: the message is cut, never wrapped, and keeps the file and line', async ($, on) => {
+  const w = world(on)
+  on('command.list', () => ({ value: [{ name: 'dbg', description: 'Step debugger', source: 'plugin' }] }) as never)
+  await begin($, w.clock)
+  const long = FATAL.replace('foo()', 'shop_cart_items_from_the_session_store_for_the_current_customer()')
+  for (let i = 0; i < 3; i++) w.append(long)
+  await w.clock.advance(3000)
+  const ui = await $.ui.mount({ plugin: 'clawd-logs', surface: 'terminal', component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120 } as never })
+  const texts = await ui.findAll({ type: 'Text' })
+  const summary = texts.find(one => one.props.wrap === 'truncate-end')
+  expect(summary?.text).toMatch(/…/)
+  expect(summary?.text).toMatch(/Foo\.php:42$/)
+  // Every part of the row, Buttons drawn as "[ label ]", inside the frame (border and padding take 4).
+  const row = texts.filter(one => !String(one.text).includes('\n')).reduce((n, one) => n + [...String(one.text)].length, 0)
+  const buttons = ['Fix', 'Debug', 'Dismiss'].reduce((n, label) => n + label.length + 4, 0)
+  expect(row + buttons).toBeLessThanOrEqual(120 - 4)
+  await ui.unmount()
+})

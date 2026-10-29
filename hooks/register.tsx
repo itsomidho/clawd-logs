@@ -310,8 +310,13 @@ export const register: Register = (on, options) => {
       ? `${localPath(ctx.root, top.file)}:${top.line}`
       : ''
     const total = fresh.length
-    // 40 for the counts and buttons, 4 for the frame's border and padding.
-    const room = Math.max(20, e.props.bodyColumns - 44 - (debugAt ? 8 : 0))
+    // The message's room: the row less everything else on it, counted as
+    // drawn (a Button is its label in "[ … ]"), so the row fits exactly; one
+    // cell more and the message would wrap onto a second line.
+    const label = ` ${LEVEL_LABEL[top.level].toUpperCase()} `
+    const counts = `${label} ${total} new · `.length + (top.count > 1 ? ` ×${top.count}`.length : 0)
+    const buttons = ' [ Fix ] '.length + (debugAt ? '[ Debug ] '.length : 0) + '[ Dismiss ]'.length
+    const room = Math.max(20, e.props.bodyColumns - 4 - counts - buttons)
     const summary = bandLine(top, ctx.root, room)
     const color = top.level === 'warning' || top.level === 'notice' ? WARN : ERR
     const band = (
@@ -320,7 +325,7 @@ export const register: Register = (on, options) => {
         <Text> </Text>
         <Text bold>{total}</Text>
         <Text dimColor>{total === 1 ? ' new · ' : ' new · '}</Text>
-        <Text>{summary}</Text>
+        <Text wrap="truncate-end">{summary}</Text>
         {top.count > 1 ? <Text dimColor>{` ×${top.count}`}</Text> : null}
         <Text> </Text>
         <Button key="fix" label="Fix" onPress={async () => {
