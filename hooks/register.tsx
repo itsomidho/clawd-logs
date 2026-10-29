@@ -9,6 +9,7 @@ import {
   LEVEL_LABEL,
   addEntries,
   bandLine,
+  bandParts,
   findSources,
   fixText,
   headline,
@@ -317,32 +318,62 @@ export const register: Register = (on, options) => {
     const counts = `${label} ${total} new · `.length + (top.count > 1 ? ` ×${top.count}`.length : 0)
     const buttons = ' [ Fix ] '.length + (debugAt ? '[ Debug ] '.length : 0) + '[ Dismiss ]'.length
     const room = Math.max(20, e.props.bodyColumns - 4 - counts - buttons)
-    const summary = bandLine(top, ctx.root, room)
     const color = top.level === 'warning' || top.level === 'notice' ? WARN : ERR
-    const band = (
-      <Box borderStyle="round" borderColor={BORDER} paddingX={1} flexDirection="row">
-        <Text bold color={CHIP_TEXT} backgroundColor={color}>{` ${LEVEL_LABEL[top.level].toUpperCase()} `}</Text>
-        <Text> </Text>
-        <Text bold>{total}</Text>
-        <Text dimColor>{total === 1 ? ' new · ' : ' new · '}</Text>
-        <Text wrap="truncate-end">{summary}</Text>
-        {top.count > 1 ? <Text dimColor>{` ×${top.count}`}</Text> : null}
-        <Text> </Text>
-        <Button key="fix" label="Fix" onPress={async () => {
-          await $.prompt.submit({ text: fixText(top, ctx.root) }).catch(() => {})
-          await update($, dismissedAt, () => top.lastAt)
-        }} />
-        <Text> </Text>
-        {debugAt ? <Button key="debug" label="Debug" onPress={async () => {
-          await $.command.run({ command: 'dbg', args: `break ${debugAt}` }).catch(() => {})
-        }} /> : null}
-        {debugAt ? <Text> </Text> : null}
-        <Button key="dismiss" label="Dismiss" onPress={async () => {
-          const latest = (await read($, groups)).reduce((t, g) => Math.max(t, g.lastAt), 0)
-          await update($, dismissedAt, () => latest)
-        }} />
-      </Box>
-    )
+    const chip = <Text bold color={CHIP_TEXT} backgroundColor={color}>{label}</Text>
+    const news = [<Text> </Text>, <Text bold>{total}</Text>, <Text dimColor>{' new · '}</Text>]
+    const times = top.count > 1 ? <Text dimColor>{` ×${top.count}`}</Text> : null
+    const actions = [
+      <Text> </Text>,
+      <Button key="fix" label="Fix" onPress={async () => {
+        await $.prompt.submit({ text: fixText(top, ctx.root) }).catch(() => {})
+        await update($, dismissedAt, () => top.lastAt)
+      }} />,
+      <Text> </Text>,
+      debugAt ? <Button key="debug" label="Debug" onPress={async () => {
+        await $.command.run({ command: 'dbg', args: `break ${debugAt}` }).catch(() => {})
+      }} /> : null,
+      debugAt ? <Text> </Text> : null,
+      <Button key="dismiss" label="Dismiss" onPress={async () => {
+        const latest = (await read($, groups)).reduce((t, g) => Math.max(t, g.lastAt), 0)
+        await update($, dismissedAt, () => latest)
+      }} />,
+    ]
+    // On one row while the message has room; on a narrow screen, two: the
+    // message across the first, where it points and the buttons on the second.
+    const isTwoRows = room < TWO_ROWS_UNDER && top.file !== undefined
+    let band
+    if (!isTwoRows) {
+      band = (
+        <Box borderStyle="round" borderColor={BORDER} paddingX={1} flexDirection="row">
+          {chip}
+          {news}
+          <Text wrap="truncate-end">{bandLine(top, ctx.root, room)}</Text>
+          {times}
+          {actions}
+        </Box>
+      )
+    } else {
+      const inner = e.props.bodyColumns - 4
+      const lead = `${label} ${total} new · `.length
+      const timesWidth = top.count > 1 ? ` ×${top.count}`.length : 0
+      const parts = bandParts(top, ctx.root, Math.max(10, inner - lead), Math.max(12, inner - lead - timesWidth - buttons))
+      band = (
+        <Box borderStyle="round" borderColor={BORDER} paddingX={1} flexDirection="column">
+          <Box flexDirection="row" height={1} overflow="hidden">
+            {chip}
+            {news}
+            <Text wrap="truncate-end">{parts.message}</Text>
+          </Box>
+          <Box flexDirection="row" height={1} overflow="hidden">
+            <Text>{' '.repeat(lead)}</Text>
+            <Text wrap="truncate-end">{parts.where}</Text>
+            {times}
+            <Box flexGrow={1} />
+            {actions}
+          </Box>
+        </Box>
+      )
+    }
     return below ? <Box flexDirection="column">{band}{below as never}</Box> : band
   })
 }
@@ -355,6 +386,8 @@ async function hasDebugger($: Engine): Promise<boolean> {
 
 // The clawd family's look (shared with clawd-git and clawd-debug): the accent,
 // the frame colour, and chips (dark text on a colour).
+// With less room than this for the message on one row, the band takes two.
+const TWO_ROWS_UNDER = 70
 const BORDER = '#5c6370'
 const CHIP_TEXT = '#1e2127'
 const WARN = '#e5c07b'

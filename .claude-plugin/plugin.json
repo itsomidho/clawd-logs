@@ -1,6 +1,6 @@
 {
   "name": "clawd-logs",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Watches your project's error logs (WordPress debug.log, nginx, any log file): new errors show above the prompt, grouped, with a Fix button, and Claude hears about the ones its own work caused",
   "author": { "name": "Omid Hosseini", "url": "https://github.com/itsomidho" },
   "homepage": "https://github.com/itsomidho/clawd-logs",

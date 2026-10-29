@@ -175,22 +175,28 @@ test('without clawd-debug, the band has no Debug button', async ($, on) => {
   await ui.unmount()
 })
 
-test('a narrow band fits its row: the message is cut, never wrapped, and keeps the file and line', async ($, on) => {
+test('a narrow band takes two rows: the message across the first, where it points and the buttons on the second', async ($, on) => {
   const w = world(on)
   on('command.list', () => ({ value: [{ name: 'dbg', description: 'Step debugger', source: 'plugin' }] }) as never)
   await begin($, w.clock)
   const long = FATAL.replace('foo()', 'shop_cart_items_from_the_session_store_for_the_current_customer()')
   for (let i = 0; i < 3; i++) w.append(long)
   await w.clock.advance(3000)
-  const ui = await $.ui.mount({ plugin: 'clawd-logs', surface: 'terminal', component: 'AbovePrompt',
-    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120 } as never })
-  const texts = await ui.findAll({ type: 'Text' })
-  const summary = texts.find(one => one.props.wrap === 'truncate-end')
-  expect(summary?.text).toMatch(/…/)
-  expect(summary?.text).toMatch(/Foo\.php:42$/)
-  // Every part of the row, Buttons drawn as "[ label ]", inside the frame (border and padding take 4).
-  const row = texts.filter(one => !String(one.text).includes('\n')).reduce((n, one) => n + [...String(one.text)].length, 0)
-  const buttons = ['Fix', 'Debug', 'Dismiss'].reduce((n, label) => n + label.length + 4, 0)
-  expect(row + buttons).toBeLessThanOrEqual(120 - 4)
+  const mount = (bodyColumns: number) => $.ui.mount({ plugin: 'clawd-logs', surface: 'terminal', component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns } as never })
+  const ui = await mount(100)
+  const cut = (await ui.findAll({ type: 'Text' })).filter(one => one.props.wrap === 'truncate-end').map(one => String(one.text))
+  // The message gets nearly the whole first row; the file and line the second.
+  expect(cut[0]).toMatch(/^Uncaught Error: Call to undefined function shop_cart_items_from_the_session.*…$/)
+  expect(cut[0]!.length).toBeGreaterThan(70)
+  expect(cut[1]).toMatch(/Foo\.php:42$/)
+  expect(await ui.find({ key: 'fix' })).toBeDefined()
+  expect(await ui.find({ key: 'debug' })).toBeDefined()
   await ui.unmount()
+  // On a wide screen it stays one row: message, then file and line.
+  const wide = await mount(200)
+  const one = (await wide.findAll({ type: 'Text' })).filter(t => t.props.wrap === 'truncate-end').map(t => String(t.text))
+  expect(one).toHaveLength(1)
+  expect(one[0]).toMatch(/Foo\.php:42$/)
+  await wide.unmount()
 })

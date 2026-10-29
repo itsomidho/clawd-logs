@@ -32,7 +32,14 @@ Or try it from a checkout: `claude --plugin-dir path/to/clawd-logs`.
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-It is framed like [clawd-statusbar](https://github.com/itsomidho/clawd-statusbar)'s section. On a narrow screen the message is cut first, so the file and line stay readable.
+It is framed like [clawd-statusbar](https://github.com/itsomidho/clawd-statusbar)'s section. On a narrower screen it takes two rows, so the message keeps its room:
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────────────────╮
+│  FATAL  1 new · Uncaught Error: Call to undefined function shop_cart_items()                │
+│                 wp-content/plugins/shop/cart.php:12 ×3        [ Fix ] [ Debug ] [ Dismiss ] │
+╰─────────────────────────────────────────────────────────────────────────────────────────────╯
+```
 
 **Fix** sends the error and its stack trace to Claude. **Debug**, shown when [clawd-debug](https://github.com/itsomidho/clawd-debug) is installed and the error points at a PHP, Python or JavaScript file and line, opens that file in the debugger with a breakpoint on the line; press `t` there for a run with test data. **Dismiss** hides the band until the next new error. It sits with [clawd-guard](https://github.com/itsomidho/clawd-guard)'s band and [clawd-git](https://github.com/itsomidho/clawd-git)'s panel when you have them.
 

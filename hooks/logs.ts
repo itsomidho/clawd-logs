@@ -235,6 +235,16 @@ export function shortenPath(path: string, max: number): string {
   return path.slice(0, max - 1 - tail) + '…' + path.slice(path.length - tail)
 }
 
+// The band's two rows on a narrow screen: the message in `messageRoom`
+// characters, and where it points (file:line) in `whereRoom`, each cut on its own.
+export function bandParts(g: Group, root: string, messageRoom: number, whereRoom: number): { message: string; where: string } {
+  const line = oneLine(g, root)
+  const at = g.file === undefined ? -1 : line.lastIndexOf(' · ')
+  const message = at < 0 ? line : line.slice(0, at)
+  const where = g.file === undefined ? '' : shortenPath(`${relative(root, g.file)}:${g.line ?? ''}`, Math.max(12, whereRoom))
+  return { message: message.length > messageRoom ? message.slice(0, Math.max(0, messageRoom - 1)) + '…' : message, where }
+}
+
 // oneLine fitted to `room` characters for the band: the message is cut
 // first, so where the error points (file:line) stays readable.
 export function bandLine(g: Group, root: string, room: number): string {
